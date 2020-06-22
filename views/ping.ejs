@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Socket.IO Example</title>
+    </head>
+    <body>
+        <center>
+            <input type="hidden" id="ssid">
+            <h1>Clients Connected <b id="client"></b></h1><br>
+                <button onclick="ping('<%= logged.name %>')">Ping</button><br>
+            <div id="user">
+                <ul>
+                <% users.forEach((user) => { %>
+                    <li><%= user.name %></li>
+                 <% }) %>
+                </ul>
+            </div>
+            <p id="pinged"></p>
+            <button onclick="dis('<%= logged.sid %>')">Disconnect</button><br>
+        </center>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+                var socket = io('http://localhost:3000',{transports: ['websocket'], upgrade: false});
+
+                socket.on('connect', function() {
+                    document.getElementById('ssid').value = socket.id;
+                });
+
+                socket.on('stats', function(data) {
+                    console.log('Connected clients:', data.numClients);
+                    document.getElementById('client').innerHTML = data.numClients;
+                });
+                socket.on('users', (data) => {
+                    var newState = "";
+                    data.forEach(element => {
+                        newState += `<li>${element.name}</li>`;
+                    });
+                    document.getElementById('user').innerHTML = newState;                    
+                });
+
+                socket.on('call', (data) => {
+                    console.log(data + " : Pinnged");
+                    document.getElementById('pinged').innerHTML = data + ' Pinged';
+                });
+
+                function ping(name){
+                    console.log("Client Pingged : " + name);
+                    socket.emit('call', name);
+                }
+
+                function dis(sid){
+                    window.close();
+                }
+
+</script>
+    </body>
+</html>

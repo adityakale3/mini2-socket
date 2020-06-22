@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Socket.IO Example</title>
+    </head>
+    <body>
+        <center>
+            <h1>Clients Connected <b id="client"></b></h1>
+
+
+                <input name="user" id='user' placeholder="user" type="text" required>
+                <input name="sid" id='ssid' placeholder="sid" type="hidden" required>
+                <input type="button" onclick="home()" value="Reg">
+
+
+        </center>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+
+                var socket = io('http://localhost:3000',{transports: ['websocket'], upgrade: false});
+
+                socket.on('connect', function() {
+                            console.log(socket.id);
+                            document.getElementById('ssid').value = socket.id;
+                        });
+
+
+                socket.on('stats', function(data) {
+                    console.log('Connected clients:', data.numClients);
+                    document.getElementById('client').innerHTML = data.numClients;
+                });
+
+                function home(){
+                    var a = document.getElementById('user').value;
+                    var sid = document.getElementById('ssid').value;
+                    window.location='/ping/'+a+'/'+sid;                  
+                }
+
+
+        </script>
+    </body>
+</html>
