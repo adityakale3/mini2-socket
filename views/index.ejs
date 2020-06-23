@@ -8,8 +8,13 @@
             <h1>Clients Connected <b id="client"></b></h1>
 
 
-                <input name="user" id='user' placeholder="user" type="text" required>
-                <input name="sid" id='ssid' placeholder="sid" type="hidden" required>
+                <input name="user" id='user' placeholder="user" type="text" required><br>
+                <input name="sid" id='ssid' placeholder="sid" type="hidden" required><br>
+                <select name="room" id="room"><br>
+                        <option value="Room1">Room 1</option>
+                        <option value="Room2">Room 2</option>
+                        <option value="all">All</option>
+                    </select><br><br>
                 <input type="button" onclick="home()" value="Reg">
 
 
@@ -18,7 +23,7 @@
         <script src="/socket.io/socket.io.js"></script>
         <script>
 
-                var socket = io('http://localhost:3000',{transports: ['websocket'], upgrade: false});
+                var socket = io();
 
                 socket.on('connect', function() {
                             console.log(socket.id);
@@ -33,9 +38,17 @@
 
                 function home(){
                     var a = document.getElementById('user').value;
+                    var room = document.getElementById('room').value;
                     var sid = document.getElementById('ssid').value;
-                    window.location='/ping/'+a+'/'+sid;                  
+                    document.cookie = `username=${a}`; 
+                    document.cookie = `room=${room}`; 
+                    window.location='/ping/'+a+'/'+sid+"/"+room;                  
                 }
+
+
+
+
+
 
 
         </script>

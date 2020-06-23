@@ -3,14 +3,18 @@ var app = express();
 var http = require('http').createServer(app);
 var io = require('socket.io').listen(http);
 const bodyParser = require('body-parser');
+var session = require('express-session');
 
 
 
 app.use(express.static(__dirname + '/node_modules'));
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 app.use(bodyParser.json());
-
-
+app.use(session({
+    secret: "Shh, its a secret!",
+    resave: true,
+    saveUninitialized: true
+}));
 app.set('view engine','ejs');
 app.set('views','./views');
 
@@ -33,23 +37,50 @@ var numClients = 0;
         io.emit('users', users);
 
         socket.on('call', (data) => {
-            console.log('Server Pinged : ' + data);
+            console.log('Server Pinged : ' + data.name);
             console.log(data);
             console.log('--------------------');
-            io.emit('call', data);
+            if(data.room == "all"){
+                io.emit('call', data.name);
+            }else{
+                socket.to(data.room).emit('call', data.name);
+            }
+
+        });
+
+        socket.on('regU', (data) => {
+            var userre = data.name;
+            var ssi = data.sid;
+            var room = data.room;
+            users = users.filter( ppl => ppl.name !== userre);
+            var obj = {};
+            obj.name = userre;
+            obj.sid = ssi;
+            obj.room = room;
+            users.push(obj);
+            socket.join(room);
+            console.log('New Users Directory : ',users);
+            io.emit('users', users);
+            console.log('--------------------');
         });
 
         socket.on('test', (data) => {
             console.log(data.name, ' | Socket ID : ', data.sid);
         });
- // On disconnect
+
+        socket.on('dis', (data) => {
+            console.log(data.name, ' | Socket ID : ', data.sid);
+            socket.to(data.room).emit('dis', data.name + "Left Room");
+        });
+// On disconnect
         socket.on('disconnect', function() {
             numClients--;
             io.emit('stats', { numClients: numClients });
             console.log('Connected clients:', numClients);
             console.log('Disconnected : ' + socket.id);
-            users = users.filter( ppl => users.sid !== socket.id);
+            users = users.filter( ppl => ppl.sid !== socket.id);
             console.log('After Disconnect : ', users);
+            io.emit('users', users);
         });
     });
     
@@ -74,14 +105,20 @@ app.get('/', (req,res) => {
 
 app.get('/test', (req,res) => {
     res.render('test');    
-});    
+});  
 
-app.get('/ping/:name/:id', (req,res) => {
+app.get('/api', (req,res) => {
+    res.status(200).json({users, "Clients : " : numClients});    
+}); 
+
+app.get('/ping/:name/:id/:room', (req,res) => {
     var user = req.params.name;
     var sid = req.params.id;
+    var room = req.params.room;
     var obj = {};
     obj.name = user;
     obj.sid = sid;
+    obj.room = room;
     users.push(obj);
     console.log(users);
     res.render('ping', {users : users, logged : obj});    

@@ -5,26 +5,32 @@
     </head>
     <body>
         <center>
+            <h1>Welcome <%= logged.name %></h1>
+            <h2>Room : <b id="roomT"><%= logged.room %></b></h2>
+            <br>
             <input type="hidden" id="ssid">
+            <input type="hidden" id="room">
             <h1>Clients Connected <b id="client"></b></h1><br>
                 <button onclick="ping('<%= logged.name %>')">Ping</button><br>
             <div id="user">
                 <ul>
                 <% users.forEach((user) => { %>
-                    <li><%= user.name %></li>
+                    <li><%= user.name %> | <%= user.room %></li>
                  <% }) %>
                 </ul>
             </div>
             <p id="pinged"></p>
-            <button onclick="dis('<%= logged.sid %>')">Disconnect</button><br>
+            <button onclick="dis('<%= logged %>')">Disconnect</button><br>
         </center>
 
         <script src="/socket.io/socket.io.js"></script>
         <script>
-                var socket = io('http://localhost:3000',{transports: ['websocket'], upgrade: false});
+                var socket = io();
 
                 socket.on('connect', function() {
                     document.getElementById('ssid').value = socket.id;
+                    document.getElementById('roomT').value = readCookie("room");
+                    socket.emit('regU', {name:readCookie("username"), sid : socket.id, room : readCookie("room") });
                 });
 
                 socket.on('stats', function(data) {
@@ -46,13 +52,24 @@
 
                 function ping(name){
                     console.log("Client Pingged : " + name);
-                    socket.emit('call', name);
+                    socket.emit('call', {name: name, room : readCookie("room")});
                 }
 
                 function dis(sid){
-                    window.close();
+                    socket.emit('dis', sid);
+                    window.location='/';
                 }
 
+function readCookie(val) {
+    var nameEQ = val + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0;i < ca.length;i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1,c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+    }
+    return null;
+}
 </script>
     </body>
 </html>
